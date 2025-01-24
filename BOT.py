@@ -31,7 +31,8 @@ class Bot:
             self.bank_R()
         elif ((not self.s_lineL) and self.s_lineR):
             self.bank_L()
-        else self.forward()
+        else:
+            self.forward()
     
     def run(self):
         while(self.running):
