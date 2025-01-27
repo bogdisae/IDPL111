@@ -10,7 +10,7 @@ class Servo:
     
     def __init__(self):
         self.Dir = Pin(Dir_pin , Pin.OUT) # set motor direction
-        self.pwm = PWM(Pin(15)) # set speed
+        self.pwm = PWM(Pin(15)) 
         self.pwm.freq(50) # set max frequency
         self.pwm.duty_u16(1802)
         
