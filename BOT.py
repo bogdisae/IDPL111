@@ -30,16 +30,9 @@ class Bot:
         self.R_motor.Forward(80)
 
     def line_following_onoff(self):
-<<<<<<< HEAD
-        if (self.s_lineL and (not self.s_lineR)):
-            self.bank_L()
-        elif ((not self.s_lineL) and self.s_lineR):
-            self.bank_R()
-        else:
-=======
+
         self.update_sensors()
         if self.s_lineL == 0 and self.s_lineM == 1 and self.s_lineR == 0:  
->>>>>>> 28774b066a7863a21dcb396ae32bd2b794878a5f
             self.forward()
         elif self.s_lineL == 1 and self.s_lineM == 1 and self.s_lineR == 0:  
             self.bank_L()
