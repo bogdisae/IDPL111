@@ -6,5 +6,8 @@ from utime import sleep
 
 bot = Bot()
 
+bot.run()
+
+
 
 
