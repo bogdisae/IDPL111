@@ -28,9 +28,9 @@ class Bot:
     
     def line_following_onoff(self):
         if (self.s_lineL and (not self.s_lineR)):
-            self.bank_R()
-        elif ((not self.s_lineL) and self.s_lineR):
             self.bank_L()
+        elif ((not self.s_lineL) and self.s_lineR):
+            self.bank_R()
         else:
             self.forward()
     
