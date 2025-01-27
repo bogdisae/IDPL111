@@ -33,7 +33,7 @@ class Bot:
         self.R_motor.Forward(80)
         time.sleep(0.5)
 
-    def line_following_onoff(self):
+    def follow_line(self):
 
         self.update_sensors()
         if self.s_lineL == 0 and self.s_lineM == 1 and self.s_lineR == 0:  
@@ -48,11 +48,7 @@ class Bot:
             self.bank_R()
 
     def run(self):
-        try:
-            while self.running:
-                self.line_following_onoff()
-        except KeyboardInterrupt:
-            print("Stopping the bot...")
-            self.running = False
+        while self.running:
+            self.follow_line()
 
 
