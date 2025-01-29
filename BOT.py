@@ -1,91 +1,82 @@
 from machine import Pin
 from MOTOR import Motor
 import time
-from enum import Enum
-
-
-# This is here for naming directions in the navigation to prevent bugs from miss-typing
-class direct(Enum):
-    LEFT = 0
-    STRAIGHT = 1
-    RIGHT = 2
-
 
 PATHS = {
-    "LA": [direct.RIGHT, direct.LEFT],  # Left warehouse to A
+    "LA": ["right", "left"],  # Left warehouse to A
     "LB": [
-        direct.STRAIGHT,
-        direct.RIGHT,
-        direct.STRAIGHT,
-        direct.RIGHT,
+        "straight",
+        "right",
+        "straight",
+        "right",
     ],  # Left warehouse to B
     "LC": [
-        direct.STRAIGHT,
-        direct.RIGHT,
-        direct.LEFT,
-        direct.LEFT,
+        "straight",
+        "right",
+        "left",
+        "left",
     ],  # Left warehouse to C
     "LD": [
-        direct.STRAIGHT,
-        direct.STRAIGHT,
-        direct.RIGHT,
-        direct.STRAIGHT,
-        direct.RIGHT,
+        "straight",
+        "straight",
+        "right",
+        "straight",
+        "right",
     ],  # Left warehouse to D
-    "RA": [direct.LEFT, direct.STRAIGHT, direct.RIGHT],  # Right warehouse to A
-    "RB": [direct.STRAIGHT, direct.LEFT, direct.LEFT],  # Right warehouse to B
+    "RA": ["left", "straight", "right"],  # Right warehouse to A
+    "RB": ["straight", "left", "left"],  # Right warehouse to B
     "RC": [
-        direct.STRAIGHT,
-        direct.LEFT,
-        direct.STRAIGHT,
-        direct.RIGHT,
-        direct.LEFT,
+        "straight",
+        "left",
+        "straight",
+        "right",
+        "left",
     ],  # Right warehouse to C
     "RD": [
-        direct.STRAIGHT,
-        direct.STRAIGHT,
-        direct.RIGHT,
-        direct.LEFT,
+        "straight",
+        "straight",
+        "right",
+        "left",
     ],  # Right warehouse to D
-    "AL": [direct.RIGHT, direct.LEFT],  # A to Left warehouse
+    "AL": ["right", "left"],  # A to Left warehouse
     "BL": [
-        direct.LEFT,
-        direct.STRAIGHT,
-        direct.LEFT,
-        direct.STRAIGHT,
+        "left",
+        "straight",
+        "left",
+        "straight",
     ],  # B to Left warehouse
     "CL": [
-        direct.RIGHT,
-        direct.RIGHT,
-        direct.LEFT,
-        direct.STRAIGHT,
+        "right",
+        "right",
+        "left",
+        "straight",
     ],  # C to Left warehouse
     "DL": [
-        direct.LEFT,
-        direct.STRAIGHT,
-        direct.LEFT,
-        direct.STRAIGHT,
-        direct.STRAIGHT,
+        "left",
+        "straight",
+        "left",
+        "straight",
+        "straight",
     ],  # D to Left warehouse
-    "AR": [direct.LEFT, direct.STRAIGHT, direct.RIGHT],  # A to Right warehouse
-    "BR": [direct.RIGHT, direct.RIGHT, direct.STRAIGHT],  # B to Right warehouse
+    "AR": ["left", "straight", "right"],  # A to Right warehouse
+    "BR": ["right", "right", "straight"],  # B to Right warehouse
     "CR": [
-        direct.RIGHT,
-        direct.LEFT,
-        direct.STRAIGHT,
-        direct.RIGHT,
-        direct.STRAIGHT,
+        "right",
+        "left",
+        "straight",
+        "right",
+        "straight",
     ],  # C to Right warehouse
     "DR": [
-        direct.RIGHT,
-        direct.RIGHT,
-        direct.STRAIGHT,
-        direct.STRAIGHT,
+        "right",
+        "right",
+        "straight",
+        "straight",
     ],  # D to Right warehouse
-    "HL": [direct.LEFT, direct.STRAIGHT, direct.LEFT],  # Home to Left warehouse
-    "HR": [direct.RIGHT, direct.RIGHT],  # Home to Right warehouse
-    "LH": [direct.RIGHT, direct.STRAIGHT, direct.RIGHT],  # Left warehouse to Home
-    "RH": [direct.LEFT, direct.LEFT],  # Right warehouse to Home
+    "HL": ["left", "straight", "left"],  # Home to Left warehouse
+    "HR": ["right", "right"],  # Home to Right warehouse
+    "LH": ["right", "straight", "right"],  # Left warehouse to Home
+    "RH": ["left", "left"],  # Right warehouse to Home
 }
 
 
@@ -97,9 +88,9 @@ class Bot:
         self.L_motor = Motor(7, 6)  # Left Motor
         
         # SENSORS
-        self.sensor_left = Pin(12, Pin.IN)  # Left (off the line) sensor
-        self.sensor_middle_left = Pin(10, Pin.IN)  # Middle left (on the line) sensor
-        self.sensor_middle_right = Pin(11, Pin.IN)  # Middle right (on the line) sensor
+        self.sensor_left = Pin(11, Pin.IN)  # Left (off the line) sensor
+        self.sensor_middle_left = Pin(12, Pin.IN)  # Middle left (on the line) sensor
+        self.sensor_middle_right = Pin(10, Pin.IN)  # Middle right (on the line) sensor
         self.sensor_right = Pin(13, Pin.IN)  # Right (off the line) sensor
         
         # CONTROL
@@ -118,6 +109,7 @@ class Bot:
         # TURNING
         self.turning = False
         self.turn_time = 0
+        
         
         self.running = True
 
@@ -167,32 +159,33 @@ class Bot:
             pass
         
     def turn(self):
-        direction = direct.LEFT # this has been included for testing. In the future this will be retrieved from a navigation module
+        direction = "left" # this has been included for testing. In the future this will be retrieved from a navigation module
         
         # allow time for centre of turning of bot to reach junction (need to experimentally tune this time)
-        if time.time() - self.turn_time < 1:
-            self.follow_line()
+        #if time.time() - self.turn_time < 1.3:
+            #self.follow_line()
         
         # turn the bot
-        else: 
-            if direction == direct.LEFT:
-                self.L_motor.speed(-50)
-                self.R_motor.speed(50)
-            
-            elif direction == direct.RIGHT:
-                self.L_motor.speed(50)
-                self.R_motor.speed(-50)
+        #else:
+        
+        if direction == "left":
+            self.L_motor.speed(-75)
+            self.R_motor.speed(75)
+        
+        elif direction == "right":
+            self.L_motor.speed(75)
+            self.R_motor.speed(-75)
         
         # stop turning when middle sensor reads the line again (needs adjusting to make sure the correct sensor is used)
-        if (time.time() - self.turn_time > 1.5):
-            if (direction == direct.RIGHT and self.s_lineML == 1) or (direction == direct.LEFT and self.s_lineMR == 1):
+        if (time.time() - self.turn_time > 0.3):
+            if (direction == "right" and self.s_lineML == 1) or (direction == "left" and self.s_lineMR == 1):
                 self.turning = False
             
          
     def drive(self):
         
         self.update_sensors()
-        
+
         if not self.turning: # if not turning, follow the line straight
             self.follow_line()
             
@@ -207,4 +200,6 @@ class Bot:
     def run(self):
         while self.running:
             self.drive()
+
+
 
