@@ -1,28 +1,28 @@
 from machine import Pin, PWM
-from time import sleep
+import time
 
-# Set Duty Cycle for Different Angles
+# Servo parameters
 max_duty = 7864
 min_duty = 1802
-half_duty = int(max_duty/2)
+half_duty = int(max_duty / 2)
 
 class Servo:
-    
-    def __init__(self):
-        self.Dir = Pin(Dir_pin , Pin.OUT) # set motor direction
-        self.pwm = PWM(Pin(15)) 
-        self.pwm.freq(50) # set max frequency
-        self.pwm.duty_u16(1802)
-        
-    def off(self): #Servo at 0 degrees
-        self.pwm.duty_u16(1802)
-        
-    def half (self): #Servo at 90 degrees
-        self.pwm.duty_u16 (int(7864))
-        
-    def full (self, speed): #Servo at 180 degrees
-        self.pwm.duty_u16 (7864)
-        
-    
-             
+    def __init__(self, pin=15):
+        self.pwm = PWM(Pin(pin)) 
+        self.pwm.freq(50)  # Standard servo frequency
+        self.pwm.duty_u16(min_duty)  # Initial position at 0 degrees
 
+    def off(self):  # Servo at 0 degrees
+        self.pwm.duty_u16(min_duty)
+        
+    def half(self):  # Servo at 90 degrees
+        self.pwm.duty_u16(half_duty)
+        
+    def full(self):  # Servo at 180 degrees
+        self.pwm.duty_u16(max_duty)
+
+def activate_servo(): #mechanism of lifting objects
+    servo = Servo()  
+    servo.full()  # Move servo to 180 degrees
+    time.sleep(1)  # Hold for 1 second
+    servo.off()  # Move servo back to 0 degrees
