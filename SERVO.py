@@ -7,7 +7,7 @@ min_duty = 1802
 half_duty = int(max_duty / 2)
 
 class Servo:
-    def __init__(self, pin=15):
+    def __init__(self, pin=13):
         self.pwm = PWM(Pin(pin)) 
         self.pwm.freq(50)  # Standard servo frequency
         self.pwm.duty_u16(min_duty)  # Initial position at 0 degrees
