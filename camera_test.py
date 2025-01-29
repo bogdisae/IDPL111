@@ -1,8 +1,8 @@
 import struct
 import time
 import machine
-import distance  # Import the distance module
-from SERVO import servo     # Import the servo module
+import distance  
+from SERVO import SERVO     
 
 # QR Code Reader Setup
 TINY_CODE_READER_I2C_ADDRESS = 0x0C
