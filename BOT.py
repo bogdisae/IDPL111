@@ -91,13 +91,18 @@ PATHS = {
 
 class Bot:
     def __init__(self):
+        
+        # MOTORS
         self.R_motor = Motor(4, 5)  # Right Motor
         self.L_motor = Motor(7, 6)  # Left Motor
+        
+        # SENSORS
         self.sensor_left = Pin(12, Pin.IN)  # Left (off the line) sensor
         self.sensor_middle_left = Pin(10, Pin.IN)  # Middle left (on the line) sensor
         self.sensor_middle_right = Pin(11, Pin.IN)  # Middle right (on the line) sensor
         self.sensor_right = Pin(13, Pin.IN)  # Right (off the line) sensor
-        self.running = True
+        
+        # CONTROL
         self.Kp = 10  # constant
         self.Ki = 0.1  # constant
         self.turning_kp = 0
@@ -105,10 +110,16 @@ class Bot:
         self.speed = 80  # constant
         self.integral_tau = 0.05  # constant
         self.integral_timer = 0
+        
+        # NAVIGATION
         self.coming_from = "H"
         self.going_to = "L"
+        
+        # TURNING
         self.turning = False
-        self.turn_time = 0 
+        self.turn_time = 0
+        
+        self.running = True
 
     def update_sensors(self):
         self.s_lineL = self.sensor_left.value()  # 0=BLACK 1=WHITE
@@ -124,7 +135,7 @@ class Bot:
         self.L_motor.speed(self.speed)
         self.R_motor.speed(self.speed)
 
-    def proportional(self):
+    def proportional(self): # proportion control for line following
         if self.s_lineML == 1 and self.s_lineMR == 0:  # too right
             self.turning_kp = self.Kp
         elif self.s_lineML == 0 and self.s_lineMR == 1:  # too left
@@ -132,7 +143,7 @@ class Bot:
         else:
             self.turning_kp = 0
 
-    def integral(self):
+    def integral(self): # integral control for line following 
         if time.time() - self.integral_timer > 2:
             self.integral_timer = time.time()
             # set 0?
@@ -173,19 +184,19 @@ class Bot:
                 self.R_motor.speed(-50)
         
         # stop turning when middle sensor reads the line again (needs adjusting to make sure the correct sensor is used)
-        if (time.time() - self.turn_time > 1.5) and (self.s_lineML == 1):
-            self.turning = False
+        if (time.time() - self.turn_time > 1.5):
+            if (direction == direct.RIGHT and self.s_lineML == 1) or (direction == direct.LEFT and self.s_lineMR == 1):
+                self.turning = False
             
          
-        def drive(self):
+    def drive(self):
         
         self.update_sensors()
         
-        if not self.turning:
+        if not self.turning: # if not turning, follow the line straight
             self.follow_line()
-        
-        # if the far left/right sensors detect a junction, trigger turning sequence
-        if (self.s_lineL == 1 or self.s_lineR == 1) and not self.turning:
+            
+            if (self.s_lineL == 1 or self.s_lineR == 1): # if the far left/right sensors detect a junction, trigger turning sequence
                 self.turn_time = time.time()
                 self.turning = True
                 
@@ -196,3 +207,4 @@ class Bot:
     def run(self):
         while self.running:
             self.drive()
+
