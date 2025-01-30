@@ -16,3 +16,4 @@ class Servo:
     def turn_to_angle(self, angle): # between 0 - 180 degrees
         self.pwm.duty_16 = int(angle * (self.max_duty - self.min_duty)/180)
 
+
