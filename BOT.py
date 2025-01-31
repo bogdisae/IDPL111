@@ -112,9 +112,11 @@ class Bot:
         self.integral_timer = 0
         
         # NAVIGATION
-        self.coming_from = "H"
-        self.going_to = "L"
+        self.coming_from = "L"
+        self.going_to = "C"
         self.position = 0
+        self.current_path = PATHS[self.coming_from+self.going_to]
+        self.next_turn = ""
         
         # TURNING
         self.turning = False
@@ -177,49 +179,58 @@ class Bot:
         
         # turn the bot
         #else:
-        
+        min_turning_time = 0.3
         if direction == "left":
             self.L_motor.speed(-75)
-            self.R_motor.speed(75)
-        
+            self.R_motor.speed(75) 
         elif direction == "right":
             self.L_motor.speed(75)
             self.R_motor.speed(-75)
-        
+        else: #going straight
+            self.update_sensors()
+            self.follow_line()
+            min_turning_time+=.5
+
         # stop turning when middle sensor reads the line again (needs adjusting to make sure the correct sensor is used)
-        if (time.time() - self.turn_time > 0.3):
-            if (direction == "right" and self.s_lineML == 1) or (direction == "left" and self.s_lineMR == 1):
+        if (time.time() - self.turn_time > min_turning_time):
+            if (direction == "right" and self.s_lineML == 1) or (direction == "left" and self.s_lineMR == 1) or direction == "straight":
+                print("Stopped turning")
                 self.turning = False
+                time.sleep(.15)
             
          
     def drive(self):
         
         self.update_sensors()
-        current_path = PATHS[self.coming_from+self.going_to]
 
         if not self.turning: # if not turning, follow the line straight
             self.follow_line()
             
             if (self.s_lineL == 1 or self.s_lineR == 1): # if the far left/right sensors detect a junction, trigger turning sequence
-                if (self.position > current_path.length()):
+                if (self.position < len(self.current_path)):
                     self.turn_time = time.time()
                     self.turning = True
+                    self.next_turn = self.current_path[self.position]
+                    self.position += 1
+                    print("started turning")
                 else:
                     self.L_motor.speed(0)
                     self.R_motor.speed(0)
                     self.cargo()
                 
         if self.turning:
-            self.turn(current_path[self.position])
-            self.position += 1
+            self.turn(self.next_turn)
     
     def cargo(self):
+        # Should handle re-assigning directions and current path
         pass
 
     def run(self):
         while self.running:
             self.drive()
             self.cargo()
+
+
 
 
 
