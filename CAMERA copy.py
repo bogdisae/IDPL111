@@ -1,13 +1,11 @@
 import struct
 import time
 import machine
-
+import distance  
    
 class Camera:
 
     def __init__(self):
-        self.detected_qr = False
-
         # QR Code Reader Setup
         self.TINY_CODE_READER_I2C_ADDRESS = 0x0C
         self.TINY_CODE_READER_DELAY = 0.05
@@ -22,20 +20,22 @@ class Camera:
         # Initialize I2C for QR Code Reader
         self.i2c = machine.I2C(1, scl=machine.Pin(19), sda=machine.Pin(18), freq=400000)
 
-        def detect_qr_code(self):
-
+    def detect_qr_code(self):
+        while True:
             time.sleep(self.TINY_CODE_READER_DELAY)
             self.read_data = self.i2c.readfrom(self.TINY_CODE_READER_I2C_ADDRESS, self.TINY_CODE_READER_I2C_BYTE_COUNT)
             self.message_length, = struct.unpack_from(self.TINY_CODE_READER_LENGTH_FORMAT, self.read_data, self.TINY_CODE_READER_LENGTH_OFFSET)
             self.message_bytes = struct.unpack_from(self.TINY_CODE_READER_MESSAGE_FORMAT, self.read_data, self.TINY_CODE_READER_MESSAGE_OFFSET)
             
-            if self.message_length != 0:
-                try:
-                    self.message_string = bytearray(self.message_bytes[0:self.message_length]).decode("utf-8")
-                    self.detected_qr = True
+            if self.message_length == 0:
+                print('No QR code detected')
 
-                except Exception as e:
-                    #print("Error decoding QR code:", e)
-                    pass
+            try:
+                self.message_string = bytearray(self.message_bytes[0:self.message_length]).decode("utf-8")
+                print('QR Code Detected:', self.message_string)
+
+            except Exception as e:
+                print("Error decoding QR code:", e)
+                pass
 
 

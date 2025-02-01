@@ -1,5 +1,6 @@
 from machine import Pin
 from MOTOR import Motor
+from CARGO import Cargo
 import time
 
 PATHS = {
@@ -122,6 +123,8 @@ class Bot:
         self.turning = False
         self.turn_time = 0
         
+        # CARGO handling 
+        self.cargo = Cargo()
         
         self.running = True
 
@@ -216,14 +219,14 @@ class Bot:
                 else:
                     self.L_motor.speed(0)
                     self.R_motor.speed(0)
-                    self.cargo()
+                    #self.cargo()
                 
         if self.turning:
             self.turn(self.next_turn)
     
-    def cargo(self):
-        # Should handle re-assigning directions and current path
+    def cargo_pickup(self):
         pass
+        
 
     def run(self):
         while self.running:
