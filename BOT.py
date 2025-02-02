@@ -1,6 +1,9 @@
 from machine import Pin
 from MOTOR import Motor
 from CARGO import Cargo
+from CAMERA import Camera
+from DISTANCE import Distance
+from SERVO import Servo
 import time
 
 PATHS = {
@@ -97,7 +100,13 @@ class Bot:
         self.R_motor = Motor(4, 5)  # Right Motor
         self.L_motor = Motor(7, 6)  # Left Motor
 
-        # SENSORS
+        # CARGO
+        self.camera = Camera()
+        self.dist_sensor = Distance()
+        self.servo = Servo()
+        self.cargo_time = 0
+
+        # LINE SENSORS
         self.sensor_left = Pin(11, Pin.IN)  # Left (off the line) sensor
         self.sensor_middle_left = Pin(12, Pin.IN)  # Middle left (on the line) sensor
         self.sensor_middle_right = Pin(10, Pin.IN)  # Middle right (on the line) sensor
@@ -117,7 +126,7 @@ class Bot:
         self.going_to = "C"
         self.position = 0
         self.current_path = PATHS[self.coming_from+self.going_to]
-        self.next_turn = ""
+        self.turn_direction = ""
         
         # TURNING
         self.turning = False
@@ -174,58 +183,78 @@ class Bot:
             pass
         
     def turn(self, direction):
-        #direction = "left" # this has been included for testing. In the future this will be retrieved from a navigation module
-        
-        # allow time for centre of turning of bot to reach junction (need to experimentally tune this time)
-        #if time.time() - self.turn_time < 1.3:
-            #self.follow_line()
-        
-        # turn the bot
-        #else:
-        min_turning_time = 0.3
-        if direction == "left":
-            self.L_motor.speed(-75)
-            self.R_motor.speed(75) 
-        elif direction == "right":
-            self.L_motor.speed(75)
-            self.R_motor.speed(-75)
-        else: #going straight
-            self.update_sensors()
-            self.follow_line()
-            min_turning_time+=.5
 
-        # stop turning when middle sensor reads the line again (needs adjusting to make sure the correct sensor is used)
-        if (time.time() - self.turn_time > min_turning_time):
-            if (direction == "right" and self.s_lineML == 1) or (direction == "left" and self.s_lineMR == 1) or direction == "straight":
-                print("Stopped turning")
-                self.turning = False
-                time.sleep(.15)
+        self.turn_time = time.time()
+
+        while True:
+            self.update_sensors()
+
+            min_turning_time = 0.3
+            if direction == "left":
+                self.L_motor.speed(-75)
+                self.R_motor.speed(75) 
+            elif direction == "right":
+                self.L_motor.speed(75)
+                self.R_motor.speed(-75)
+            else: #going straight
+                self.follow_line()
+                min_turning_time+=.5
+
+            # stop turning when middle sensor reads the line again (needs adjusting to make sure the correct sensor is used)
+            if (time.time() - self.turn_time > min_turning_time):
+                if (direction == "right" and self.s_lineML == 1) or (direction == "left" and self.s_lineMR == 1) or direction == "straight":
+                    time.sleep(.15)
+                    break
             
          
     def drive(self):
         
         self.update_sensors()
-
-        if not self.turning: # if not turning, follow the line straight
-            self.follow_line()
+        self.follow_line()
             
-            if (self.s_lineL == 1 or self.s_lineR == 1): # if the far left/right sensors detect a junction, trigger turning sequence
-                if (self.position < len(self.current_path)):
-                    self.turn_time = time.time()
-                    self.turning = True
-                    self.next_turn = self.current_path[self.position]
-                    self.position += 1
-                    print("started turning")
-                else:
-                    self.L_motor.speed(0)
-                    self.R_motor.speed(0)
-                    #self.cargo()
-                
-        if self.turning:
-            self.turn(self.next_turn)
+        # if the far left/right sensors detect a junction, trigger turning sequence    
+        if (self.s_lineL == 1 or self.s_lineR == 1) and (self.position < len(self.current_path)): 
+            self.turn_direction = self.current_path[self.position]
+            self.position += 1
+            self.turn(self.turn_direction)
+
+        if self.position == len(self.current_path): # handle cargo pickup / dropoff, and path reassignment
+            self.coming_from = self.going_to
+            self.position = 0
+
+            if self.going_to in "LR": # the bot is at a pickup point
+                self.cargo_pickup()
+            
+            else: # the bot is at a dropoff point
+                self.cargo_dropoff()
+        
+            self.current_path = PATHS[self.coming_from+self.going_to]
+
+
+    def cargo_dropoff(self):
+        pass            
     
     def cargo_pickup(self):
-        pass
+
+        self.update_sensors()
+        self.follow_line()
+
+        if self.dist_sensor.get_distance() < 2: # distnace in cm
+            self.cargo_time = time.time()
+            while True:
+                self.camera.detect_qr_code()
+
+                if self.camera.detected_qr:
+                    self.going_to = self.camera.message_string[0]
+                    break
+                
+                if time.time() - self.timer > 5:
+                    self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
+                    break
+            
+            # function to drive forward and pick up the box
+
+            self.turn('right') # turn around and carry on
         
 
     def run(self):

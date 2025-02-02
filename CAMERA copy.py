@@ -1,7 +1,7 @@
 import struct
 import time
 import machine
-import distance  
+
    
 class Camera:
 
