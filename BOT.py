@@ -18,7 +18,8 @@ class Bot:
         self.camera = Camera()
         self.dist_sensor = Distance()
         self.servo = Servo()
-        self.cargo_time = 0
+        self.boxes_at_L = 4
+        self.boxes_at_R = 4
 
         # LINE SENSORS
         self.sensor_left = Pin(11, Pin.IN)  # Left (off the line) sensor
@@ -41,10 +42,6 @@ class Bot:
         self.position = 0
         self.current_path = PATHS[self.coming_from+self.going_to]
         self.turn_direction = ""
-        
-        # TURNING
-        self.turning = False
-        self.turn_time = 0
                 
         self.running = True
 
@@ -61,6 +58,10 @@ class Bot:
     def forward(self):
         self.L_motor.speed(self.speed)
         self.R_motor.speed(self.speed)
+
+    def reverse(self, rev_speed):
+        self.L_motor.speed(-1*rev_speed)
+        self.R_motor.speed(-1*rev_speed)
 
     def stop(self):
         self.L_motor.speed(0)
@@ -99,7 +100,7 @@ class Bot:
         
     def turn(self, direction):
 
-        self.turn_time = time.time()
+        timer = time.time()
 
         while True:
             self.update_sensors()
@@ -115,9 +116,9 @@ class Bot:
                 self.follow_line()
                 min_turning_time+=.5
 
-            # stop turning when middle sensor reads the line again (needs adjusting to make sure the correct sensor is used)
-            if (time.time() - self.turn_time > min_turning_time):
-                if (direction == "right" and self.s_lineML == 1) or (direction == "left" and self.s_lineMR == 1) or direction == "straight":
+            # stop turning when middle sensor reads the line again 
+            if (time.time() - timer > min_turning_time):
+                if (self.s_lineML == 1 and self.s_lineMR == 1) or direction == "straight":
                     time.sleep(.15)
                     break
             
@@ -133,21 +134,54 @@ class Bot:
             self.position += 1
             self.turn(self.turn_direction)
 
-        if self.position == len(self.current_path): # handle cargo pickup / dropoff, and path reassignment
-            self.coming_from = self.going_to
-            self.position = 0
+            if self.position == len(self.current_path): # handle cargo pickup / dropoff, and path reassignment
+                self.coming_from = self.going_to
+                self.position = 0
 
-            if self.going_to in "LR": # the bot is at a pickup point
-                self.cargo_pickup()
+                if self.going_to in "LR": # the bot is at a pickup point
+                    self.cargo_pickup()
+
+                    # keep track of how many boxes are at each pickup
+                    if self.going_to == 'L':
+                        self.boxes_at_L -= 1
+                    elif self.going_to == 'R':
+                        self.boxes_at_R -= 1
+                
+                elif self.going_to in "ABCD": # the bot is at a dropoff point
+                    self.cargo_dropoff()
+
+                else: # the bot is returning home
+                    pass
             
-            else: # the bot is at a dropoff point
-                self.cargo_dropoff()
-        
-            self.current_path = PATHS[self.coming_from+self.going_to]
+                self.current_path = PATHS[self.coming_from+self.going_to]
 
 
     def cargo_dropoff(self):
-        pass            
+
+        # reassign going to variable
+        if self.boxes_at_R != 0: # if there are still boxes at R, then return to R
+            self.going_to = 'R'
+        
+        elif self.boxes_at_L != 0: # if there are no boxes at R, but still boxes at L, go to L
+            self.going_to = 'L'
+
+        else: # we have dropped off all the boxes, return to home
+            self.goint_to = 'H'
+
+        while True:
+            self.update_sensors()
+            self.follow_line()
+
+            if self.s_lineL == 1 or self.s_lineR == 1: # outer sensors detected depot dropoff (do we want to use line sensors for this?)
+                self.stop()
+
+                time.sleep(2) # replace with function to drop the box
+
+                self.reverse(20) # reverse back a bit (not line following)
+                time.sleep(2) 
+                self.turn('right') # turn around, and carry on
+                break
+
     
     def cargo_pickup(self):
 
@@ -155,9 +189,9 @@ class Bot:
             self.update_sensors()
             self.follow_line()
 
-            if self.dist_sensor.get_distance() < 2: # bot is less than 2cm from box
+            if self.dist_sensor.get_distance() < 2: # if the bot is less than scm from box, stop and try read qr
                 self.stop()
-                self.cargo_time = time.time()
+                timer = time.time()
                 while True:
                     self.camera.detect_qr_code()
 
@@ -165,7 +199,7 @@ class Bot:
                         self.going_to = self.camera.message_string[0] # unsure if this is the right format
                         break
                     
-                    if time.time() - self.timer > 5:
+                    if time.time() - timer > 5:
                         self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
                         break
                 
