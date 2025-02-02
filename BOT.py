@@ -1,9 +1,9 @@
 from machine import Pin
 from MOTOR import Motor
-from CARGO import Cargo
 from CAMERA import Camera
 from DISTANCE import Distance
 from SERVO import Servo
+from LIGHT import Light
 import time
 
 PATHS = {
@@ -82,17 +82,7 @@ PATHS = {
     "LH": ["right", "straight", "right"],  # Left warehouse to Home
     "RH": ["left", "left"],  # Right warehouse to Home
 }
-
-class Light:
-    def __init__(self):
-        self.led = Pin(16, Pin.OUT)
-    
-    def on(self):
-        led.value(1)
-    
-    def off(self):
-        led.value(0)
-    
+   
 class Bot:
     def __init__(self):
         
@@ -131,10 +121,7 @@ class Bot:
         # TURNING
         self.turning = False
         self.turn_time = 0
-        
-        # CARGO handling 
-        self.cargo = Cargo()
-        
+                
         self.running = True
 
     def update_sensors(self):
@@ -239,13 +226,13 @@ class Bot:
         self.update_sensors()
         self.follow_line()
 
-        if self.dist_sensor.get_distance() < 2: # distnace in cm
+        if self.dist_sensor.get_distance() < 2: # bot is less than 2cm from box
             self.cargo_time = time.time()
             while True:
                 self.camera.detect_qr_code()
 
                 if self.camera.detected_qr:
-                    self.going_to = self.camera.message_string[0]
+                    self.going_to = self.camera.message_string[0] # unsure if this is the right format
                     break
                 
                 if time.time() - self.timer > 5:
@@ -260,7 +247,6 @@ class Bot:
     def run(self):
         while self.running:
             self.drive()
-            self.cargo()
 
 
 
