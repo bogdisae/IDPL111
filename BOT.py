@@ -142,9 +142,9 @@ class Bot:
                     self.cargo_pickup()
 
                     # keep track of how many boxes are at each pickup
-                    if self.going_to == 'L':
+                    if self.coming_from == 'L':
                         self.boxes_at_L -= 1
-                    elif self.going_to == 'R':
+                    elif self.coming_from == 'R':
                         self.boxes_at_R -= 1
                 
                 elif self.going_to in "ABCD": # the bot is at a dropoff point
