@@ -62,6 +62,10 @@ class Bot:
         self.L_motor.speed(self.speed)
         self.R_motor.speed(self.speed)
 
+    def stop(self):
+        self.L_motor.speed(0)
+        self.R_motor.speed(0)
+
     def proportional(self): # proportion control for line following
         if self.s_lineML == 1 and self.s_lineMR == 0:  # too right
             self.turning_kp = self.Kp
@@ -147,25 +151,28 @@ class Bot:
     
     def cargo_pickup(self):
 
-        self.update_sensors()
-        self.follow_line()
+        while True:
+            self.update_sensors()
+            self.follow_line()
 
-        if self.dist_sensor.get_distance() < 2: # bot is less than 2cm from box
-            self.cargo_time = time.time()
-            while True:
-                self.camera.detect_qr_code()
+            if self.dist_sensor.get_distance() < 2: # bot is less than 2cm from box
+                self.stop()
+                self.cargo_time = time.time()
+                while True:
+                    self.camera.detect_qr_code()
 
-                if self.camera.detected_qr:
-                    self.going_to = self.camera.message_string[0] # unsure if this is the right format
-                    break
+                    if self.camera.detected_qr:
+                        self.going_to = self.camera.message_string[0] # unsure if this is the right format
+                        break
+                    
+                    if time.time() - self.timer > 5:
+                        self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
+                        break
                 
-                if time.time() - self.timer > 5:
-                    self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
-                    break
-            
-            # function to drive forward and pick up the box
+                # function to drive forward and pick up the box
 
-            self.turn('right') # turn around and carry on
+                self.turn('right') # turn around and carry on
+                break
         
 
     def run(self):
