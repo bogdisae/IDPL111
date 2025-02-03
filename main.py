@@ -1,10 +1,12 @@
 from SERVO import Servo
+from distance import Distance
+import time
 
-servo = Servo()
+distance = Distance()
 
-servo.turn_to_angle(10)
-
-
+while True:
+    print(distance.get_distance())
+    time.sleep(0.1)
 
 
 
