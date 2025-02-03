@@ -196,10 +196,12 @@ class Bot:
                     self.camera.detect_qr_code()
 
                     if self.camera.detected_qr:
+                        print(f"QR Code Detected: {self.camera.message_string}")
                         self.going_to = self.camera.message_string[0] # unsure if this is the right format
                         break
                     
                     if time.time() - timer > 5:
+                        print("QR Code detection failed, defaulting to A.")
                         self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
                         break
                 
