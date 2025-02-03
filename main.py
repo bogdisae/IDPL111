@@ -1,8 +1,10 @@
-from BOT import Bot
+from SERVO import Servo
 
-bot = Bot()
+servo = Servo()
 
-bot.run()
+servo.turn_to_angle(10)
+
+
 
 
 
