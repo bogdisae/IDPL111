@@ -2,7 +2,7 @@ from machine import Pin
 from PATHS import PATHS
 from MOTOR import Motor
 from CAMERA import Camera
-from DISTANCE import Distance
+from distance import Distance
 from SERVO import Servo
 from LIGHT import Light
 import time
