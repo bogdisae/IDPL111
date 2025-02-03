@@ -9,7 +9,6 @@ class Distance:
     def get_distance(self):
         # Read the ADC value 
         self.raw_value = self.sensor_pin.read_u16()  
-        self.voltage = self.raw_value * 3.3 / 65535  # Convert to voltage
-        # range 500cm
-        self.distance = (self.voltage * 500) / 3.3  # distance in cm
+        self.distance = (self.raw_value * 500) / 65535.0  # distance in cm
+        time.sleep (0.2)
         return self.distance
