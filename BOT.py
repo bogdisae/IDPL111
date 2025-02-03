@@ -104,24 +104,44 @@ class Bot:
 
         while True:
             self.update_sensors()
-
             min_turning_time = 0.3
+
             if direction == "left":
                 self.L_motor.speed(-30)
                 self.R_motor.speed(75) 
+
             elif direction == "right":
                 self.L_motor.speed(75)
                 self.R_motor.speed(-30)
+
             else: #going straight
                 self.follow_line()
-                min_turning_time+=.5
 
-            # stop turning when middle sensor reads the line again 
+            # stop turning when middle sensors read the line again 
             if (time.time() - timer > min_turning_time):
                 if (self.s_lineML == 1 and self.s_lineMR == 1) or direction == "straight":
-                    #time.sleep(.15)
                     break
-            
+
+    def spin_around(self, direction): # used for turning around on the spot
+
+        timer = time.time()
+
+        while True:
+            self.update_sensors()
+            min_turning_time = 0.5
+
+            if direction == "left":
+                self.L_motor.speed(-50)
+                self.R_motor.speed(50) 
+
+            elif direction == "right":
+                self.L_motor.speed(50)
+                self.R_motor.speed(-50)
+
+            # stop turning when middle sensors read the line again 
+            if (time.time() - timer > min_turning_time):
+                if (self.s_lineML == 1 and self.s_lineMR == 1):
+                    break
          
     def drive(self):
         
@@ -179,7 +199,7 @@ class Bot:
 
                 self.reverse(20) # reverse back a bit (not line following)
                 time.sleep(2) 
-                self.turn('right') # turn around, and carry on
+                self.spin_around('right') # turn around, and carry on
                 break
 
     
@@ -188,8 +208,8 @@ class Bot:
         while True:
             self.update_sensors()
             self.follow_line()
-            print(f"{self.dist_sensor.get_distance()}")
-            if self.dist_sensor.get_distance() < 20: # if the bot is less than scm from box, stop and try read qr
+
+            if self.dist_sensor.get_distance() < 20: # if the bot is less than 20cm from box, stop and try read qr
                 self.stop()
                 timer = time.time()
                 while True:
@@ -207,7 +227,12 @@ class Bot:
                 
                 # function to drive forward and pick up the box
 
-                self.turn('right') # turn around and carry on
+                # once the box has been picked up, turn around and carry on. 
+                # A direction has been specified to avoid hitting the side walls.
+                if self.coming_from == 'L':
+                    self.spin_around('left')
+                else:
+                    self.spin_around('right')
                 break
         
 
