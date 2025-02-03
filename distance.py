@@ -10,5 +10,5 @@ class Distance:
         # Read the ADC value 
         self.raw_value = self.sensor_pin.read_u16()  
         self.distance = (self.raw_value * 500) / 65535.0  # distance in cm
-        sleep (0.2)
+        time.sleep (0.2)
         return self.distance
