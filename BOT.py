@@ -4,7 +4,7 @@ from MOTOR import Motor
 from CAMERA import Camera
 from DISTANCE import Distance
 from SERVO import Servo
-from LIGHT import Light
+#from LIGHT import Light
 import time
    
 class Bot:
@@ -37,8 +37,8 @@ class Bot:
         self.integral_timer = 0
         
         # NAVIGATION
-        self.coming_from = "L"
-        self.going_to = "C"
+        self.coming_from = "H"
+        self.going_to = "R"
         self.position = 0
         self.current_path = PATHS[self.coming_from+self.going_to]
         self.turn_direction = ""
@@ -107,11 +107,11 @@ class Bot:
 
             min_turning_time = 0.3
             if direction == "left":
-                self.L_motor.speed(-75)
+                self.L_motor.speed(-30)
                 self.R_motor.speed(75) 
             elif direction == "right":
                 self.L_motor.speed(75)
-                self.R_motor.speed(-75)
+                self.R_motor.speed(-30)
             else: #going straight
                 self.follow_line()
                 min_turning_time+=.5
@@ -119,7 +119,7 @@ class Bot:
             # stop turning when middle sensor reads the line again 
             if (time.time() - timer > min_turning_time):
                 if (self.s_lineML == 1 and self.s_lineMR == 1) or direction == "straight":
-                    time.sleep(.15)
+                    #time.sleep(.15)
                     break
             
          
@@ -184,21 +184,21 @@ class Bot:
 
     
     def cargo_pickup(self):
-
+        print("Picking up cargo")
         while True:
             self.update_sensors()
             self.follow_line()
-
-            if self.dist_sensor.get_distance() < 2: # if the bot is less than scm from box, stop and try read qr
+            print(f"{self.dist_sensor.get_distance()}")
+            if self.dist_sensor.get_distance() < 20: # if the bot is less than scm from box, stop and try read qr
                 self.stop()
                 timer = time.time()
                 while True:
-                    self.camera.detect_qr_code()
+                    #self.camera.detect_qr_code()
 
-                    if self.camera.detected_qr:
-                        print(f"QR Code Detected: {self.camera.message_string}")
-                        self.going_to = self.camera.message_string[0] # unsure if this is the right format
-                        break
+                    #if self.camera.detected_qr:
+                        #print(f"QR Code Detected: {self.camera.message_string}")
+                        #self.going_to = self.camera.message_string[0] # unsure if this is the right format
+                        #break
                     
                     if time.time() - timer > 5:
                         print("QR Code detection failed, defaulting to A.")
@@ -214,6 +214,8 @@ class Bot:
     def run(self):
         while self.running:
             self.drive()
+
+
 
 
 

@@ -1,4 +1,5 @@
 from machine import ADC
+import time
 
 class Distance:
     
