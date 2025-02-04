@@ -104,7 +104,7 @@ class Bot:
 
         while True:
             self.update_sensors()
-            min_turning_time = 0.3
+            min_turning_time = 0.6 # used to ensure sensors aren't triggered immediately after starting the turn.
 
             if direction == "left":
                 self.L_motor.speed(-30)
@@ -118,9 +118,8 @@ class Bot:
                 self.follow_line()
 
             # stop turning when middle sensors read the line again 
-            if (time.time() - timer > min_turning_time):
-                if (self.s_lineML == 1 and self.s_lineMR == 1) or direction == "straight":
-                    break
+            if (time.time() - timer > min_turning_time) and (self.s_lineML == 1 and self.s_lineMR == 1):
+                break
 
     def spin_around(self, direction): # used for turning around on the spot
 
@@ -128,7 +127,7 @@ class Bot:
 
         while True:
             self.update_sensors()
-            min_turning_time = 0.5
+            min_turning_time = 0.6
 
             if direction == "left":
                 self.L_motor.speed(-50)
@@ -186,7 +185,7 @@ class Bot:
             self.going_to = 'L'
 
         else: # we have dropped off all the boxes, return to home
-            self.goint_to = 'H'
+            self.going_to = 'H'
 
         while True:
             self.update_sensors()
@@ -197,43 +196,45 @@ class Bot:
 
                 time.sleep(2) # replace with function to drop the box
 
-                self.reverse(20) # reverse back a bit (not line following)
-                time.sleep(2) 
+                self.reverse(40) # reverse back a bit (not line following)
+                time.sleep(1) 
                 self.spin_around('right') # turn around, and carry on
                 break
 
     
     def cargo_pickup(self):
+
         print("Picking up cargo")
-        while True:
+        self.speed = 40
+        timer = time.time() 
+
+        while True: # Drive forward slowly, constantly trying to scan the qr
             self.update_sensors()
             self.follow_line()
+            self.camera.detect_qr_code()
 
-            if self.dist_sensor.get_distance() < 20: # if the bot is less than 20cm from box, stop and try read qr
-                self.stop()
-                timer = time.time()
-                while True:
-                    #self.camera.detect_qr_code()
-
-                    #if self.camera.detected_qr:
-                        #print(f"QR Code Detected: {self.camera.message_string}")
-                        #self.going_to = self.camera.message_string[0] # unsure if this is the right format
-                        #break
-                    
-                    if time.time() - timer > 5:
-                        print("QR Code detection failed, defaulting to A.")
-                        self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
-                        break
-                
-                # function to drive forward and pick up the box
-
-                # once the box has been picked up, turn around and carry on. 
-                # A direction has been specified to avoid hitting the side walls.
-                if self.coming_from == 'L':
-                    self.spin_around('left')
-                else:
-                    self.spin_around('right')
+            if self.camera.detected_qr: 
+                print(f"QR Code Detected: {self.camera.message_string}")
+                self.going_to = self.camera.message_string[0] 
                 break
+            
+            if time.time() - timer > 5:
+                print("QR Code detection failed, defaulting to A.")
+                self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
+                break
+
+        # Now need to drive forward and pick up the box. 
+        # This will use the ToF sensor, but at the moment we can just have it drive forward for a second
+        self.speed = 80
+        time.sleep(1)
+
+        # once the box has been picked up, turn around and carry on. 
+        # A direction has been specified to avoid hitting the side walls.
+        if self.coming_from == 'L':
+            self.spin_around('left')
+        else:
+            self.spin_around('right')
+
         
 
     def run(self):

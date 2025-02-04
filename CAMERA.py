@@ -34,7 +34,6 @@ class Camera:
             try:
                 self.message_string = bytearray(self.message_bytes[0:self.message_length]).decode("utf-8")
                 self.detected_qr = True
-                time.sleep(3)
 
             except Exception as e:
                 #print("Error decoding QR code:", e)

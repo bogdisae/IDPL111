@@ -69,8 +69,9 @@ PATHS = {
         "straight",
         "straight",
     ],  # D to Right warehouse
-    "HL": ["left", "straight", "left"],  # Home to Left warehouse
-    "HR": ["right", "right"],  # Home to Right warehouse
-    "LH": ["right", "straight", "right"],  # Left warehouse to Home
-    "RH": ["left", "left"],  # Right warehouse to Home
+    "HL": ["straight", "straight", "left", "straight", "left"],  # Home to Left warehouse
+    "HR": ["straight", "straight", "right", "right"],  # Home to Right warehouse
+    "LH": ["right", "straight", "right", "straight", "straight"],  # Left warehouse to Home
+    "RH": ["left", "left","straight", "straight"],  # Right warehouse to Home
 }
+
