@@ -204,8 +204,8 @@ class Bot:
 
                 time.sleep(2) # replace with function to drop the box
 
-                self.reverse(100) # reverse back a bit (not line following)
-                time.sleep(0.5) 
+                self.reverse(90) # reverse back a bit (not line following)
+                time.sleep(0.3) 
                 self.spin_around('right') # turn around, and carry on
                 break
 
