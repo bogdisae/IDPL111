@@ -28,11 +28,11 @@ class Bot:
         self.sensor_right = Pin(13, Pin.IN)  # Right (off the line) sensor
         
         # CONTROL
-        self.Kp = 10  # constant
+        self.Kp = 8  # constant
         self.Ki = 0.1  # constant
         self.turning_kp = 0
         self.turning_ki = 0
-        self.speed = 80  # constant
+        self.speed = 90  # constant
         self.integral_tau = 0.05  # constant
         self.integral_timer = 0
         
@@ -99,12 +99,15 @@ class Bot:
             pass
         
     def turn(self, direction):
+        
+        print(f"turning {direction}")
 
         timer = time.time()
 
         while True:
             self.update_sensors()
-            min_turning_time = 0.6 # used to ensure sensors aren't triggered immediately after starting the turn.
+            min_turning_time = 0.35 # used to ensure sensors aren't triggered immediately after starting the turn.
+        
 
             if direction == "left":
                 self.L_motor.speed(-30)
@@ -117,9 +120,14 @@ class Bot:
             else: #going straight
                 self.follow_line()
 
-            # stop turning when middle sensors read the line again 
-            if (time.time() - timer > min_turning_time) and (self.s_lineML == 1 and self.s_lineMR == 1):
+            # stop turning when middle sensors read the line again
+            if direction != 'straight':
+                if (time.time() - timer > min_turning_time) and (self.s_lineML == 1 and self.s_lineMR == 1):
+                    break
+            
+            elif self.s_lineL == 0 and self.s_lineR == 0:
                 break
+            
 
     def spin_around(self, direction): # used for turning around on the spot
 
@@ -130,12 +138,12 @@ class Bot:
             min_turning_time = 0.6
 
             if direction == "left":
-                self.L_motor.speed(-50)
-                self.R_motor.speed(50) 
+                self.L_motor.speed(-75)
+                self.R_motor.speed(75) 
 
             elif direction == "right":
-                self.L_motor.speed(50)
-                self.R_motor.speed(-50)
+                self.L_motor.speed(75)
+                self.R_motor.speed(-75)
 
             # stop turning when middle sensors read the line again 
             if (time.time() - timer > min_turning_time):
@@ -196,8 +204,8 @@ class Bot:
 
                 time.sleep(2) # replace with function to drop the box
 
-                self.reverse(40) # reverse back a bit (not line following)
-                time.sleep(1) 
+                self.reverse(100) # reverse back a bit (not line following)
+                time.sleep(0.5) 
                 self.spin_around('right') # turn around, and carry on
                 break
 
@@ -215,7 +223,8 @@ class Bot:
 
             if self.camera.detected_qr: 
                 print(f"QR Code Detected: {self.camera.message_string}")
-                self.going_to = self.camera.message_string[0] 
+                self.going_to = self.camera.message_string[0]
+                print(self.going_to)
                 break
             
             if time.time() - timer > 5:
@@ -225,7 +234,10 @@ class Bot:
 
         # Now need to drive forward and pick up the box. 
         # This will use the ToF sensor, but at the moment we can just have it drive forward for a second
-        self.speed = 80
+        self.stop()
+        time.sleep(1)
+        self.speed = 90
+        self.forward()
         time.sleep(1)
 
         # once the box has been picked up, turn around and carry on. 
@@ -240,6 +252,8 @@ class Bot:
     def run(self):
         while self.running:
             self.drive()
+
+
 
 
 

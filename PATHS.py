@@ -31,7 +31,7 @@ PATHS = {
     "RD": [
         "straight",
         "straight",
-        "right",
+        "left",
         "left",
     ],  # Right warehouse to D
     "AL": ["right", "left"],  # A to Left warehouse
@@ -74,4 +74,6 @@ PATHS = {
     "LH": ["right", "straight", "right", "straight", "straight"],  # Left warehouse to Home
     "RH": ["left", "left","straight", "straight"],  # Right warehouse to Home
 }
+
+
 

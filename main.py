@@ -1,12 +1,19 @@
-from SERVO import Servo
-from distance import Distance
+from BOT import Bot
 import time
+from machine import Pin
 
-distance = Distance()
+bot = Bot()
+button = Pin(22, Pin.IN, Pin.PULL_DOWN)
+
 
 while True:
-    print(distance.get_distance())
-    time.sleep(0.1)
+    if button.value() == 1:
+        bot.forward()
+        bot.run()
+        break
+
+
+
 
 
 
