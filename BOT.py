@@ -231,9 +231,13 @@ class Bot:
 
             if self.camera.detected_qr: 
                 print(f"QR Code Detected: {self.camera.message_string}")
-                self.going_to = self.camera.message_string[0]
-                print(self.going_to)
-                break
+                if self.get_distance() < 10:
+                   self.stop()
+                   time.sleep(1)
+                   self.servo.turn_to_angle(20)
+                   self.going_to = self.camera.message_string[0]
+                   print(self.going_to)
+            break
             
             if time.time() - timer > 5:
                 print("QR Code detection failed, defaulting to A.")
