@@ -110,12 +110,12 @@ class Bot:
         
 
             if direction == "left":
-                self.L_motor.speed(-30)
-                self.R_motor.speed(75) 
+                self.L_motor.speed(-40)
+                self.R_motor.speed(100) 
 
             elif direction == "right":
-                self.L_motor.speed(75)
-                self.R_motor.speed(-30)
+                self.L_motor.speed(100)
+                self.R_motor.speed(-40)
 
             else: #going straight
                 self.follow_line()
@@ -138,12 +138,12 @@ class Bot:
             min_turning_time = 0.6
 
             if direction == "left":
-                self.L_motor.speed(-75)
-                self.R_motor.speed(75) 
+                self.L_motor.speed(-100)
+                self.R_motor.speed(100) 
 
             elif direction == "right":
-                self.L_motor.speed(75)
-                self.R_motor.speed(-75)
+                self.L_motor.speed(100)
+                self.R_motor.speed(-100)
 
             # stop turning when middle sensors read the line again 
             if (time.time() - timer > min_turning_time):
@@ -199,28 +199,32 @@ class Bot:
             self.update_sensors()
             self.follow_line()
 
-            if self.s_lineL == 1 or self.s_lineR == 1: # outer sensors detected depot dropoff (do we want to use line sensors for this?)
+            if self.s_lineL == 1 or self.s_lineR == 1: # outer sensors detected depot dropoff 
+                
+                # dropoff the box
                 self.stop()
+                time.sleep(1)
+                self.servo.turn_to_angle(0)
+                time.sleep(1)
+                break
 
-                self.servo.turn_to_angle(0) # dropoff the box
+        # reverse back and turn when reached the line
+        self.reverse(75)
+        timer = time.time()
+        
+        while True:
+            if (time.time() - timer > 1) and (self.s_lineL == 1 or self.s_lineR == 1):
+                self.turn_direction = self.current_path[0]
+                if self.turn_direction == 'right': # since reversing, we want the robot to turn in the opposite direction
+                    self.turn('left')
+                else:
+                    self.turn('right')
 
-                # reverse back and turn when reached the line
-                self.reverse()
-                timer = time.time()
-                while True:
-                    if (time.time() - timer > 0.5) and (self.s_lineL == 1 or self.s_lineR == 1):
-                        self.turn_direction = self.current_path[0]
-                        if self.turn_direction == 'right': # since reversing, we want the robot to turn in the opposite direction
-                            self.turn('left')
-                        else:
-                            self.turn('right')
-
-                        self.position += 1
-                        break
+                self.position += 1
+                break
     
     def cargo_pickup(self):
-
-        print("Picking up cargo")
+        
         self.speed = 40
         timer = time.time() 
 
@@ -232,19 +236,29 @@ class Bot:
             if self.camera.detected_qr: 
                 print(f"QR Code Detected: {self.camera.message_string}")
                 self.going_to = self.camera.message_string[0]
-                self.speed = 85
+                break
             
             if time.time() - timer > 5:
                 print("QR Code detection failed, defaulting to A.")
                 self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
-                self.speed = 85
+                break
+        
+        self.speed = 70
 
-            if self.dist_sensor.get_distance() < 10:
+        while True: # now we know where we are going, drive forward and pick up the box
+            self.update_sensors()
+            self.follow_line()
+            
+            if self.dist_sensor.get_distance() < 15: # the box is in the cargo hold 
                     self.stop()
                     time.sleep(1)
                     self.servo.turn_to_angle(20)
+                    time.sleep(1)
                     break
         
+        self.speed = 85
+        
+        # reassign path 
         self.current_path = PATHS[self.coming_from+self.going_to]    
 
         # once the box has been picked up, turn around and carry on. 
