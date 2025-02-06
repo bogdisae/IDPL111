@@ -202,7 +202,7 @@ class Bot:
             if self.s_lineL == 1 or self.s_lineR == 1: # outer sensors detected depot dropoff (do we want to use line sensors for this?)
                 self.stop()
 
-                time.sleep(2) # replace with function to drop the box
+                self.servo.turn_to_angle(0) # dropoff the box
 
                 # reverse back and turn when reached the line
                 self.reverse()
@@ -231,28 +231,21 @@ class Bot:
 
             if self.camera.detected_qr: 
                 print(f"QR Code Detected: {self.camera.message_string}")
-                if self.get_distance() < 10:
-                   self.stop()
-                   time.sleep(1)
-                   self.servo.turn_to_angle(20)
-                   self.going_to = self.camera.message_string[0]
-                   print(self.going_to)
-            break
+                self.going_to = self.camera.message_string[0]
+                self.speed = 85
             
             if time.time() - timer > 5:
                 print("QR Code detection failed, defaulting to A.")
                 self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
-                break
-        
-        self.current_path = PATHS[self.coming_from+self.going_to]
+                self.speed = 85
 
-        # Now need to drive forward and pick up the box. 
-        # This will use the ToF sensor, but at the moment we can just have it drive forward for a second
-        self.stop()
-        time.sleep(1)
-        self.speed = 90
-        self.forward()
-        time.sleep(1)
+            if self.dist_sensor.get_distance() < 10:
+                    self.stop()
+                    time.sleep(1)
+                    self.servo.turn_to_angle(20)
+                    break
+        
+        self.current_path = PATHS[self.coming_from+self.going_to]    
 
         # once the box has been picked up, turn around and carry on. 
         # A direction has been specified to avoid hitting the side walls.
