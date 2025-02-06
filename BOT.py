@@ -179,8 +179,6 @@ class Bot:
 
                 else: # the bot is returning home
                     pass
-            
-                self.current_path = PATHS[self.coming_from+self.going_to]
 
 
     def cargo_dropoff(self):
@@ -195,6 +193,8 @@ class Bot:
         else: # we have dropped off all the boxes, return to home
             self.going_to = 'H'
 
+        self.current_path = PATHS[self.coming_from+self.going_to]
+
         while True:
             self.update_sensors()
             self.follow_line()
@@ -204,11 +204,19 @@ class Bot:
 
                 time.sleep(2) # replace with function to drop the box
 
-                self.reverse(90) # reverse back a bit (not line following)
-                time.sleep(0.3) 
-                self.spin_around('right') # turn around, and carry on
-                break
+                # reverse back and turn when reached the line
+                self.reverse()
+                timer = time.time()
+                while True:
+                    if (time.time() - timer > 0.5) and (self.s_lineL == 1 or self.s_lineR == 1):
+                        self.turn_direction = self.current_path[0]
+                        if self.turn_direction == 'right': # since reversing, we want the robot to turn in the opposite direction
+                            self.turn('left')
+                        else:
+                            self.turn('right')
 
+                        self.position += 1
+                        break
     
     def cargo_pickup(self):
 
@@ -231,6 +239,8 @@ class Bot:
                 print("QR Code detection failed, defaulting to A.")
                 self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
                 break
+        
+        self.current_path = PATHS[self.coming_from+self.going_to]
 
         # Now need to drive forward and pick up the box. 
         # This will use the ToF sensor, but at the moment we can just have it drive forward for a second
