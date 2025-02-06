@@ -202,9 +202,10 @@ class Bot:
             if self.s_lineL == 1 or self.s_lineR == 1: # outer sensors detected depot dropoff (do we want to use line sensors for this?)
                 self.stop()
 
-                time.sleep(2) # replace with function to drop the box
-
+                time.sleep(1) # replace with function to drop the box
+                self.servo.turn_to_angle(0)
                 self.reverse(90) # reverse back a bit (not line following)
+               
                 time.sleep(0.3) 
                 self.spin_around('right') # turn around, and carry on
                 break
@@ -229,7 +230,7 @@ class Bot:
                    self.servo.turn_to_angle(20)
                    self.going_to = self.camera.message_string[0]
                    print(self.going_to)
-                   break
+            break
             
             if time.time() - timer > 5:
                 print("QR Code detection failed, defaulting to A.")
