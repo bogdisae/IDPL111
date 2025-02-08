@@ -25,7 +25,7 @@ class Bot:
         self.sensor_left = Pin(11, Pin.IN)  # Left (off the line) sensor
         self.sensor_middle_left = Pin(12, Pin.IN)  # Middle left (on the line) sensor
         self.sensor_middle_right = Pin(10, Pin.IN)  # Middle right (on the line) sensor
-        self.sensor_right = Pin(13, Pin.IN)  # Right (off the line) sensor
+        self.sensor_right = Pin(9, Pin.IN)  # Right (off the line) sensor
         
         # CONTROL
         self.Kp = 8  # constant
@@ -38,7 +38,7 @@ class Bot:
         
         # NAVIGATION
         self.coming_from = "H"
-        self.going_to = "R"
+        self.going_to = "L"
         self.position = 0
         self.current_path = PATHS[self.coming_from+self.going_to]
         self.turn_direction = ""
@@ -184,11 +184,11 @@ class Bot:
     def cargo_dropoff(self):
 
         # reassign going to variable
-        if self.boxes_at_R != 0: # if there are still boxes at R, then return to R
-            self.going_to = 'R'
-        
-        elif self.boxes_at_L != 0: # if there are no boxes at R, but still boxes at L, go to L
+        if self.boxes_at_L != 0: # if there are still boxes at R, then return to R
             self.going_to = 'L'
+        
+        elif self.boxes_at_R != 0: # if there are no boxes at R, but still boxes at L, go to L
+            self.going_to = 'R'
 
         else: # we have dropped off all the boxes, return to home
             self.going_to = 'H'
@@ -209,10 +209,11 @@ class Bot:
                 break
 
         # reverse back and turn when reached the line
-        self.reverse(75)
+        self.reverse(85)
         timer = time.time()
         
         while True:
+            self.update_sensors()
             if (time.time() - timer > 1) and (self.s_lineL == 1 or self.s_lineR == 1):
                 self.turn_direction = self.current_path[0]
                 if self.turn_direction == 'right': # since reversing, we want the robot to turn in the opposite direction
@@ -222,10 +223,17 @@ class Bot:
 
                 self.position += 1
                 break
+            
     
     def cargo_pickup(self):
+
+        # first determine the number of boxes removed from depot (used for sensor delays later on)
+        if self.going_to == 'L':
+            boxes_removed = 4 - self.boxes_at_L
+        else:
+            boxes_removed = 4 - self.boxes_at_R
         
-        self.speed = 40
+        self.speed = 50
         timer = time.time() 
 
         while True: # Drive forward slowly, constantly trying to scan the qr
@@ -243,36 +251,45 @@ class Bot:
                 self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
                 break
         
-        self.speed = 70
 
         while True: # now we know where we are going, drive forward and pick up the box
             self.update_sensors()
             self.follow_line()
             
-            if self.dist_sensor.get_distance() < 15: # the box is in the cargo hold 
-                    self.stop()
-                    time.sleep(1)
-                    self.servo.turn_to_angle(20)
-                    time.sleep(1)
-                    break
+            
+            if self.dist_sensor.get_distance() < 10: # the box is in the cargo hold
+                print("detected cargo")
+                self.stop()
+                time.sleep(1)
+                self.servo.turn_to_angle(20)
+                time.sleep(1)
+                break
         
         self.speed = 85
-        
+
         # reassign path 
         self.current_path = PATHS[self.coming_from+self.going_to]    
 
-        # once the box has been picked up, turn around and carry on. 
+        # Once the box has been picked up, reverse back for an amount of time dependent on the number of boxes left.
+        # This is to avoid turning on the box pickup lines
+        reverse_time = 0.5 + 1*boxes_removed # 0.5 seconds + 1 second for every box that has been removed from that depot.
+        self.reverse(85)
+        time.sleep(reverse_time)
+
         # A direction has been specified to avoid hitting the side walls.
         if self.coming_from == 'L':
             self.spin_around('left')
         else:
             self.spin_around('right')
 
-        
 
     def run(self):
         while self.running:
             self.drive()
+
+
+
+
 
 
 
