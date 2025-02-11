@@ -2,7 +2,7 @@ from machine import Pin
 from PATHS import PATHS
 from MOTOR import Motor
 from CAMERA import Camera
-from DISTANCE import Distance
+from ToF_SENSOR import ToF
 from SERVO import Servo
 #from LIGHT import Light
 import time
@@ -16,7 +16,7 @@ class Bot:
 
         # CARGO
         self.camera = Camera()
-        self.dist_sensor = Distance()
+        self.tof = ToF()
         self.servo = Servo()
         self.boxes_at_L = 4
         self.boxes_at_R = 4
@@ -257,7 +257,7 @@ class Bot:
             self.follow_line()
             
             
-            if self.dist_sensor.get_distance() < 10: # the box is in the cargo hold
+            if self.tof.get_distance() < 10: # the box is in the cargo hold
                 print("detected cargo")
                 self.stop()
                 time.sleep(1)
