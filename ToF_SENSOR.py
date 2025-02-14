@@ -6,7 +6,7 @@ class ToF:
     
     def __init__(self):
 
-        self.i2c = I2C(id=0, sda=Pin(16), scl=Pin(17))
+        self.i2c = I2C(id=0, sda=Pin(20), scl=Pin(21))
 
         # print("creating vl53lox object")
         # Create a VL53L0X object
@@ -32,5 +32,8 @@ class ToF:
 
 
     def get_distance(self):
-        return self.tof.ping()-50
+        try:
+            return self.tof.ping()-50
+        except exception:
+            return 100
 

@@ -1,12 +1,17 @@
 from machine import Pin
-from PATHS import PATHS
+from PATHS import PATHS, PATHS_TESTING
 from MOTOR import Motor
 from CAMERA import Camera
 from ToF_SENSOR import ToF
 from SERVO import Servo
-#from LIGHT import Light
+from LIGHT import Light
 import time
-   
+
+TESTING = False
+first_turn = "L"
+if TESTING:
+    PATHS = PATHS_TESTING 
+
 class Bot:
     def __init__(self):
         
@@ -28,22 +33,23 @@ class Bot:
         self.sensor_right = Pin(9, Pin.IN)  # Right (off the line) sensor
         
         # CONTROL
-        self.Kp = 8  # constant
-        self.Ki = 0.1  # constant
+        self.Kp = 20  # constant
+        self.Ki = 0  # constant
         self.turning_kp = 0
         self.turning_ki = 0
-        self.speed = 90  # constant
-        self.integral_tau = 0.05  # constant
+        self.speed = 100  # constant
+        self.integral_tau = 50  # constant
         self.integral_timer = 0
-        
+      
         # NAVIGATION
         self.coming_from = "H"
-        self.going_to = "L"
+        self.going_to = first_turn
         self.position = 0
         self.current_path = PATHS[self.coming_from+self.going_to]
         self.turn_direction = ""
                 
         self.running = True
+        self.light = Light()
 
     def update_sensors(self):
         self.s_lineL = self.sensor_left.value()  # 0=BLACK 1=WHITE
@@ -76,53 +82,45 @@ class Bot:
             self.turning_kp = 0
 
     def integral(self): # integral control for line following 
-        if time.time() - self.integral_timer > 2:
-            self.integral_timer = time.time()
+        if time.ticks_ms() - self.integral_timer > 2000:
+            self.integral_timer = time.ticks_ms()
             # set 0?
-        elif time.time() - self.integral_timer < self.integral_tau:
+        elif time.ticks_ms() - self.integral_timer < self.integral_tau:
             pass
         else:
             if self.turning_kp > 0:
                 self.turning_ki += self.Ki
             elif self.turning_kp < 0:
                 self.turning_ki -= self.Ki
-            self.integral_timer = time.time()
+            self.integral_timer = time.ticks_ms()
 
     def follow_line(self):
-
-        if self.s_lineML == 1 or self.s_lineMR == 1:
-            self.proportional()
-            self.integral()
-            self.bank(self.turning_kp + self.turning_ki)
-        else:
-            # Off the line
-            pass
+        self.proportional()
+        self.integral()
+        self.bank(self.turning_kp + self.turning_ki)
         
     def turn(self, direction):
-        
-        print(f"turning {direction}")
 
-        timer = time.time()
+        timer = time.ticks_ms()
+        min_turning_time = 750
 
         while True:
             self.update_sensors()
-            min_turning_time = 0.35 # used to ensure sensors aren't triggered immediately after starting the turn.
-        
 
             if direction == "left":
-                self.L_motor.speed(-40)
+                self.L_motor.speed(-60)
                 self.R_motor.speed(100) 
 
             elif direction == "right":
                 self.L_motor.speed(100)
-                self.R_motor.speed(-40)
+                self.R_motor.speed(-60)
 
             else: #going straight
                 self.follow_line()
 
             # stop turning when middle sensors read the line again
             if direction != 'straight':
-                if (time.time() - timer > min_turning_time) and (self.s_lineML == 1 and self.s_lineMR == 1):
+                if (time.ticks_ms() - timer > min_turning_time) and (self.s_lineML == 1 and self.s_lineMR == 1):
                     break
             
             elif self.s_lineL == 0 and self.s_lineR == 0:
@@ -131,11 +129,11 @@ class Bot:
 
     def spin_around(self, direction): # used for turning around on the spot
 
-        timer = time.time()
+        timer = time.ticks_ms()
+        min_turning_time = 750
 
         while True:
             self.update_sensors()
-            min_turning_time = 0.6
 
             if direction == "left":
                 self.L_motor.speed(-100)
@@ -146,7 +144,7 @@ class Bot:
                 self.R_motor.speed(-100)
 
             # stop turning when middle sensors read the line again 
-            if (time.time() - timer > min_turning_time):
+            if (time.ticks_ms() - timer > min_turning_time):
                 if (self.s_lineML == 1 and self.s_lineMR == 1):
                     break
          
@@ -178,19 +176,28 @@ class Bot:
                     self.cargo_dropoff()
 
                 else: # the bot is returning home
-                    pass
+                    time.sleep(0.5)
+                    self.light.off()
+                    self.stop()
+                    time.sleep(100)
 
 
     def cargo_dropoff(self):
+        
 
         # reassign going to variable
-        if self.boxes_at_L != 0: # if there are still boxes at R, then return to R
-            self.going_to = 'L'
-        
-        elif self.boxes_at_R != 0: # if there are no boxes at R, but still boxes at L, go to L
-            self.going_to = 'R'
-
-        else: # we have dropped off all the boxes, return to home
+        if first_turn == "L":    
+            if self.boxes_at_L != 0: # if there are still boxes at L, then return to L
+                self.going_to = 'L'
+            #elif self.boxes_at_R != 0: # if there are no boxes at L, but still boxes at R, go to R
+                #self.going_to = 'R'
+        else:
+            if self.boxes_at_R != 0: # if there are still boxes at R, then return to R
+                self.going_to = 'R'
+            #elif self.boxes_at_L != 0: # if there are no boxes at R, but still boxes at L, go to L
+                #self.going_to = 'L'
+                
+        if self.boxes_at_L == 0:
             self.going_to = 'H'
 
         self.current_path = PATHS[self.coming_from+self.going_to]
@@ -203,18 +210,18 @@ class Bot:
                 
                 # dropoff the box
                 self.stop()
-                time.sleep(1)
-                self.servo.turn_to_angle(0)
-                time.sleep(1)
+                #time.sleep(1)
+                self.servo.turn_to_angle(87.5)
+                #time.sleep(1)
                 break
 
         # reverse back and turn when reached the line
-        self.reverse(85)
-        timer = time.time()
+        self.reverse(100)
+        timer = time.ticks_ms()
         
         while True:
             self.update_sensors()
-            if (time.time() - timer > 1) and (self.s_lineL == 1 or self.s_lineR == 1):
+            if (time.ticks_ms() - timer > 750) and (self.s_lineL == 1 or self.s_lineR == 1):
                 self.turn_direction = self.current_path[0]
                 if self.turn_direction == 'right': # since reversing, we want the robot to turn in the opposite direction
                     self.turn('left')
@@ -224,8 +231,11 @@ class Bot:
                 self.position += 1
                 break
             
+        self.servo.turn_to_angle(0)
+            
     
     def cargo_pickup(self):
+        self.servo.turn_to_angle(87.5)
 
         # first determine the number of boxes removed from depot (used for sensor delays later on)
         if self.going_to == 'L':
@@ -233,8 +243,8 @@ class Bot:
         else:
             boxes_removed = 4 - self.boxes_at_R
         
-        self.speed = 50
-        timer = time.time() 
+        self.speed = 60
+        timer = time.ticks_ms() 
 
         while True: # Drive forward slowly, constantly trying to scan the qr
             self.update_sensors()
@@ -242,38 +252,39 @@ class Bot:
             self.camera.detect_qr_code()
 
             if self.camera.detected_qr: 
-                print(f"QR Code Detected: {self.camera.message_string}")
+                #print(f"QR Code Detected: {self.camera.message_string}")
                 self.going_to = self.camera.message_string[0]
                 break
             
-            if time.time() - timer > 5:
-                print("QR Code detection failed, defaulting to A.")
-                self.going_to = 'A' # return location A if the camera cant read anything after 5 seconds
+            if time.ticks_ms() - timer > 1500:
+                #print("QR Code detection failed, defaulting to A.")
+                self.going_to = 'A' # return location A if the camera cant read anything after 1.5 seconds
                 break
         
 
+        self.speed = 100
+        
+        timer = time.ticks_ms()
+        
         while True: # now we know where we are going, drive forward and pick up the box
             self.update_sensors()
             self.follow_line()
             
             
-            if self.tof.get_distance() < 10: # the box is in the cargo hold
-                print("detected cargo")
+            if self.tof.get_distance() < 10 and time.ticks_ms() - timer > 300: # the box is in the cargo hold
                 self.stop()
-                time.sleep(1)
-                self.servo.turn_to_angle(20)
-                time.sleep(1)
+                #time.sleep(1)
+                self.servo.turn_to_angle(40)
+                #time.sleep(1)
                 break
-        
-        self.speed = 85
 
         # reassign path 
         self.current_path = PATHS[self.coming_from+self.going_to]    
 
         # Once the box has been picked up, reverse back for an amount of time dependent on the number of boxes left.
         # This is to avoid turning on the box pickup lines
-        reverse_time = 0.5 + 1*boxes_removed # 0.5 seconds + 1 second for every box that has been removed from that depot.
-        self.reverse(85)
+        reverse_time = 0.3 + 0.4*boxes_removed # 0.3 seconds + 0.5 second for every box that has been removed from that depot.
+        self.reverse(100)
         time.sleep(reverse_time)
 
         # A direction has been specified to avoid hitting the side walls.
@@ -284,18 +295,10 @@ class Bot:
 
 
     def run(self):
+        self.servo.turn_to_angle(0)
+        self.light.on()
         while self.running:
             self.drive()
-
-
-
-
-
-
-
-
-
-
 
 
 

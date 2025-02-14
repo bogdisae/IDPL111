@@ -10,10 +10,8 @@ class Servo:
 
         self.pwm = PWM(Pin(pin)) 
         self.pwm.freq(50)  # Standard servo frequency
-        self.pwm.duty_u16(self.min_duty)  # Initial position at 0 degrees
+        self.pwm.duty_u16(int(87.5 * (self.max_duty - self.min_duty)/180 + self.min_duty))  # Initial position at 0 degrees
 
 
     def turn_to_angle(self, angle): # between 0 - 180 degrees
         self.pwm.duty_u16(int(angle * (self.max_duty - self.min_duty)/180) + self.min_duty)
-        
-
