@@ -1,5 +1,5 @@
 from machine import Pin, PWM
-
+from utime import sleep
 
 class Motor:
     
@@ -26,5 +26,7 @@ class Motor:
         self.pwm.duty_u16(int(65535*speed/100))
 
         
+
+
 
 

@@ -7,10 +7,10 @@ from SERVO import Servo
 from LIGHT import Light
 import time
 
-TESTING = False
+TESTING = True
 first_turn = "L"
 if TESTING:
-    PATHS = PATHS_TESTING 
+    PATHS = PATHS_TESTING
 
 class Bot:
     def __init__(self):
@@ -50,6 +50,7 @@ class Bot:
                 
         self.running = True
         self.light = Light()
+        self.reduce = 0
 
     def update_sensors(self):
         self.s_lineL = self.sensor_left.value()  # 0=BLACK 1=WHITE
@@ -181,32 +182,47 @@ class Bot:
                     self.stop()
                     time.sleep(100)
 
-
+    def get_dropoff_time(self, destination = "A", reduce = 0):
+        if destination == "A":
+            return 1500 - reduce
+        elif destination == "B":
+            return 1081 - reduce
+        elif destination == "C":
+            return 1500 - reduce
+        elif destination == "D":
+            return 1300 - reduce
+        
     def cargo_dropoff(self):
         
+        reduce_at_end = False
 
         # reassign going to variable
         if first_turn == "L":    
             if self.boxes_at_L != 0: # if there are still boxes at L, then return to L
                 self.going_to = 'L'
-            #elif self.boxes_at_R != 0: # if there are no boxes at L, but still boxes at R, go to R
-                #self.going_to = 'R'
+            elif self.boxes_at_R != 0: # if there are no boxes at L, but still boxes at R, go to R
+                self.going_to = 'R'
+                reduce_at_end = True
         else:
             if self.boxes_at_R != 0: # if there are still boxes at R, then return to R
                 self.going_to = 'R'
-            #elif self.boxes_at_L != 0: # if there are no boxes at R, but still boxes at L, go to L
-                #self.going_to = 'L'
+            elif self.boxes_at_L != 0: # if there are no boxes at R, but still boxes at L, go to L
+                self.going_to = 'L'
+                reduce_at_end = True
                 
-        if self.boxes_at_L == 0:
+        if self.boxes_at_L == 0 and self.boxes_at_R == 0:
             self.going_to = 'H'
 
         self.current_path = PATHS[self.coming_from+self.going_to]
+        
+        timer = time.ticks_ms()
 
         while True:
             self.update_sensors()
             self.follow_line()
 
-            if self.s_lineL == 1 or self.s_lineR == 1: # outer sensors detected depot dropoff 
+            #if self.s_lineL == 1 or self.s_lineR == 1: # outer sensors detected depot dropoff
+            if time.ticks_ms() - timer > self.get_dropoff_time(self.coming_from, self.reduce):
                 
                 # dropoff the box
                 self.stop()
@@ -214,7 +230,7 @@ class Bot:
                 self.servo.turn_to_angle(87.5)
                 #time.sleep(1)
                 break
-
+        
         # reverse back and turn when reached the line
         self.reverse(100)
         timer = time.ticks_ms()
@@ -232,6 +248,9 @@ class Bot:
                 break
             
         self.servo.turn_to_angle(0)
+        
+        if reduce_at_end:
+            self.reduce = 500
             
     
     def cargo_pickup(self):
@@ -256,7 +275,7 @@ class Bot:
                 self.going_to = self.camera.message_string[0]
                 break
             
-            if time.ticks_ms() - timer > 1500:
+            if time.ticks_ms() - timer > 2000:
                 #print("QR Code detection failed, defaulting to A.")
                 self.going_to = 'A' # return location A if the camera cant read anything after 1.5 seconds
                 break
@@ -283,7 +302,7 @@ class Bot:
 
         # Once the box has been picked up, reverse back for an amount of time dependent on the number of boxes left.
         # This is to avoid turning on the box pickup lines
-        reverse_time = 0.3 + 0.4*boxes_removed # 0.3 seconds + 0.5 second for every box that has been removed from that depot.
+        reverse_time = 0.3 + 0.4*boxes_removed # 0.3 seconds + 0.4 second for every box that has been removed from that depot.
         self.reverse(100)
         time.sleep(reverse_time)
 
