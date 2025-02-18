@@ -155,7 +155,13 @@ PATHS_TESTING = {
     "HR": ["straight", "straight", "right", "right"],  # Home to Right warehouse
     "LH": ["right", "straight", "right", "straight", "straight"],  # Left warehouse to Home
     "RH": ["left", "left","straight", "straight"],  # Right warehouse to Home
+    "AH": ["left", "straight"], # A to Home
+    "BH": ["right", "right", "left", "straight"], # B to Home
+    "CH": ["right", "left", "left", "right", "stright"], # C to Home
+    "DH": ["right", "straight", "right", "left", "straight"] # D to Home
 }
+
+
 
 
 

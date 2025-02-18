@@ -26,17 +26,20 @@ class Camera:
         self.detected_qr = False
 
         time.sleep(self.TINY_CODE_READER_DELAY)
-        self.read_data = self.i2c.readfrom(self.TINY_CODE_READER_I2C_ADDRESS, self.TINY_CODE_READER_I2C_BYTE_COUNT) #might give an error
-        self.message_length, = struct.unpack_from(self.TINY_CODE_READER_LENGTH_FORMAT, self.read_data, self.TINY_CODE_READER_LENGTH_OFFSET)
-        self.message_bytes = struct.unpack_from(self.TINY_CODE_READER_MESSAGE_FORMAT, self.read_data, self.TINY_CODE_READER_MESSAGE_OFFSET)
+        try:
+            self.read_data = self.i2c.readfrom(self.TINY_CODE_READER_I2C_ADDRESS, self.TINY_CODE_READER_I2C_BYTE_COUNT) #might give an error
+            self.message_length, = struct.unpack_from(self.TINY_CODE_READER_LENGTH_FORMAT, self.read_data, self.TINY_CODE_READER_LENGTH_OFFSET)
+            self.message_bytes = struct.unpack_from(self.TINY_CODE_READER_MESSAGE_FORMAT, self.read_data, self.TINY_CODE_READER_MESSAGE_OFFSET)
+        except Exception:
+             pass
         
         if self.message_length != 0:
             try:
                 self.message_string = bytearray(self.message_bytes[0:self.message_length]).decode("utf-8")
-                self.detected_qr = True
+                if self.message_string[0] in 'ABCD':
+                    self.detected_qr = True
 
-            except Exception as e:
-                #print("Error decoding QR code:", e)
+            except Exception:
                 pass
 
 

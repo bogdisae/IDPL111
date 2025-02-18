@@ -7,7 +7,7 @@ from SERVO import Servo
 from LIGHT import Light
 import time
 
-TESTING = True
+TESTING = False
 first_turn = "L"
 if TESTING:
     PATHS = PATHS_TESTING
@@ -17,13 +17,13 @@ class Bot:
         
         # MOTORS
         self.R_motor = Motor(4, 5)  # Right Motor
-        self.L_motor = Motor(7, 6)  # Left Motor
+        self.L_motor = Motor(7, 6, 0.95)  # Left Motor
 
         # CARGO
         self.camera = Camera()
         self.tof = ToF()
         self.servo = Servo()
-        self.boxes_at_L = 4
+        self.boxes_at_L = 1
         self.boxes_at_R = 4
 
         # LINE SENSORS
@@ -34,12 +34,8 @@ class Bot:
         
         # CONTROL
         self.Kp = 20  # constant
-        self.Ki = 0  # constant
         self.turning_kp = 0
-        self.turning_ki = 0
         self.speed = 100  # constant
-        self.integral_tau = 50  # constant
-        self.integral_timer = 0
       
         # NAVIGATION
         self.coming_from = "H"
@@ -79,42 +75,29 @@ class Bot:
             self.turning_kp = self.Kp
         elif self.s_lineML == 0 and self.s_lineMR == 1:  # too left
             self.turning_kp = -self.Kp
-        else:
+        elif self.s_lineML == 1 and self.s_lineMR == 1:  # too left
             self.turning_kp = 0
 
-    def integral(self): # integral control for line following 
-        if time.ticks_ms() - self.integral_timer > 2000:
-            self.integral_timer = time.ticks_ms()
-            # set 0?
-        elif time.ticks_ms() - self.integral_timer < self.integral_tau:
-            pass
-        else:
-            if self.turning_kp > 0:
-                self.turning_ki += self.Ki
-            elif self.turning_kp < 0:
-                self.turning_ki -= self.Ki
-            self.integral_timer = time.ticks_ms()
 
     def follow_line(self):
         self.proportional()
-        self.integral()
-        self.bank(self.turning_kp + self.turning_ki)
+        self.bank(self.turning_kp)
         
     def turn(self, direction):
 
         timer = time.ticks_ms()
-        min_turning_time = 750
+        min_turning_time = 900
 
         while True:
             self.update_sensors()
 
             if direction == "left":
-                self.L_motor.speed(-60)
+                self.L_motor.speed(-50)
                 self.R_motor.speed(100) 
 
             elif direction == "right":
                 self.L_motor.speed(100)
-                self.R_motor.speed(-60)
+                self.R_motor.speed(-50)
 
             else: #going straight
                 self.follow_line()
@@ -131,7 +114,7 @@ class Bot:
     def spin_around(self, direction): # used for turning around on the spot
 
         timer = time.ticks_ms()
-        min_turning_time = 750
+        min_turning_time = 900
 
         while True:
             self.update_sensors()
@@ -276,8 +259,8 @@ class Bot:
                 break
             
             if time.ticks_ms() - timer > 2000:
-                #print("QR Code detection failed, defaulting to A.")
-                self.going_to = 'A' # return location A if the camera cant read anything after 1.5 seconds
+                #print("QR Code detection failed, defaulting to C.")
+                self.going_to = 'C' # return location C if the camera cant read anything after 1.5 seconds
                 break
         
 
@@ -302,7 +285,7 @@ class Bot:
 
         # Once the box has been picked up, reverse back for an amount of time dependent on the number of boxes left.
         # This is to avoid turning on the box pickup lines
-        reverse_time = 0.3 + 0.4*boxes_removed # 0.3 seconds + 0.4 second for every box that has been removed from that depot.
+        reverse_time = 0.3 + 0.2*boxes_removed # 0.3 seconds + 0.4 second for every box that has been removed from that depot.
         self.reverse(100)
         time.sleep(reverse_time)
 
